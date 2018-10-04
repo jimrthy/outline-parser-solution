@@ -192,9 +192,8 @@ class TreeBuilder:
         result = ''
         for pair in self.parse_tree:
             result += f'{pair.prefix} {pair.body}\n'
-        # The final newline isn't in the spec either way. It would be
-        # trivial to strip it for correctness.
-        return result
+        # No \n at EOF
+        return result[:-1]
 
 
 def main(argv):
@@ -203,7 +202,7 @@ def main(argv):
     for line in sys.stdin:
         parser.parse(line)
 
-    print(str(parser))
+    print(str(parser), end='')
 
 
 if __name__ == '__main__':
