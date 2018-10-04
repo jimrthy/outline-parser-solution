@@ -1,10 +1,12 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 This is written using some python 3.7 features
 """
 
 import collections
+import dataclasses
 import re
 import sys
 
@@ -16,6 +18,15 @@ NEST_BULLET = '+'
 ORDERED_TAG = '*'
 
 TAG_EXTRACTOR = re.compile(r'\s')
+
+
+@dataclasses.dataclass
+class LeafPair:
+    """
+    Leaf node in the "AST" that the parser builds
+    """
+    prefix: str
+    body: str
 
 
 class TreeBuilder:
@@ -63,17 +74,15 @@ class TreeBuilder:
             # Search lines back from the most recent.
             # Have to skip over continuations
             previous = len(self.parse_tree) - 1
-            # This is almost obnoxious enough to convince me to use
-            # a data class instead of a plain pair.
-            while self.parse_tree[previous][0][-1] == ' ':
+            while self.parse_tree[previous].prefix[-1] == ' ':
                 previous -= 1
                 if previous < 0:
                     break
             if previous >= 0 and \
-               self.parse_tree[previous][0][-1] == FLAT_BULLET:
-                replacement = (f'{self.parse_tree[previous][0][:-1]}'
-                               f'{NEST_BULLET}')
-                self.parse_tree[previous][0] = replacement
+               self.parse_tree[previous].prefix[-1] == FLAT_BULLET:
+                whitespace = self.parse_tree[previous].prefix[:-1]
+                replacement = f'{whitespace}{NEST_BULLET}'
+                self.parse_tree[previous].prefix = replacement
         self.unordered_indentation = next_ul_indent
 
     def bullet_point(self, tag: str, body: str) -> str:
@@ -87,7 +96,7 @@ class TreeBuilder:
         """
         self.cope_with_bullet_nesting(tag)
         indentation = ' ' * self.unordered_indentation
-        return [f'{indentation}{FLAT_BULLET}', body]
+        return LeafPair(f'{indentation}{FLAT_BULLET}', body)
 
     def continuation(self, first_word: str, remainder: str) -> str:
         """
@@ -99,7 +108,7 @@ class TreeBuilder:
         Returns: processed output
         """
         indentation = ' ' * (self.unordered_indentation + 1)
-        return (indentation, f'{first_word} {remainder}')
+        return LeafPair(indentation, f'{first_word} {remainder}')
 
     def increment_numbering(self, tag: str) -> str:
         """
@@ -148,7 +157,7 @@ class TreeBuilder:
         """
         prefix = self.increment_numbering(tag)
 
-        return (prefix, body)
+        return LeafPair(prefix, body)
 
     def parse(self, line: str):
         """
@@ -179,8 +188,8 @@ class TreeBuilder:
         Converts a ParseTree into a string
         """
         result = ''
-        for prefix, body in self.parse_tree:
-            result += f'{prefix} {body}\n'
+        for pair in self.parse_tree:
+            result += f'{pair.prefix} {pair.body}\n'
         # The final newline isn't in the spec either way. It would be
         # trivial to strip it for correctness.
         return result
