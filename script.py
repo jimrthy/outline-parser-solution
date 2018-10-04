@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# This was written for python 3.7
+
 """
-This is written using some python 3.7 features
+Parse an outline
 """
 
 import collections
