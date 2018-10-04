@@ -181,6 +181,8 @@ class TreeBuilder:
         result = ''
         for prefix, body in self.parse_tree:
             result += f'{prefix} {body}\n'
+        # The final newline isn't in the spec either way. It would be
+        # trivial to strip it for correctness.
         return result
 
 
